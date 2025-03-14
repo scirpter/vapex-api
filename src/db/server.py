@@ -1,22 +1,35 @@
 import os
-import urllib.parse
 from tortoise import Tortoise
+import ssl
 
 
 async def start_db() -> None:
-    database_url: str = (
-        "mysql://"
-        + os.environ.get("POSTGRES_USER", "")
-        + ":"
-        + urllib.parse.quote_plus(os.environ.get("POSTGRES_PASSWORD", ""))
-        + "@"
-        + os.environ.get("POSTGRES_HOST", "")
-        + ":"
-        + os.environ.get("POSTGRES_PORT", "")
-        + "/"
-        + os.environ.get("POSTGRES_DATABASE", "")
-        + "?maxsize=10"
-    )
-    await Tortoise.init(db_url=database_url, modules={"models": ["db.models"]})  # type: ignore
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    await Tortoise.init(
+        modules={"models": ["db.models"]},
+        config={
+            "connections": {
+                "default": {
+                    "engine": "tortoise.backends.asyncpg",
+                    "credentials": {
+                        "database": os.environ.get("POSTGRES_DATABASE", "postgres"),
+                        "host": os.environ.get("POSTGRES_HOST", "localhost"),
+                        "password": os.environ.get("POSTGRES_PASSWORD", "postgres"),
+                        "port": os.environ.get("POSTGRES_PORT", "5432"),
+                        "user": os.environ.get("POSTGRES_USER", "postgres"),
+                        "ssl": ctx,
+                    },
+                }
+            },
+            "apps": {
+                "models": {
+                    "models": ["db.models"],
+                    "default_connection": "default",
+                }
+            },
+        },
+    )  # type: ignore
     await Tortoise.generate_schemas()
     print("connected to database")
