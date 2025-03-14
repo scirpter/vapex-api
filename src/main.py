@@ -19,7 +19,6 @@ async def create_product(product: Product) -> dict[str, str]:
 
 async def main() -> None:
     await start_db()
-    print("done")
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
 
 

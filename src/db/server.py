@@ -32,4 +32,3 @@ async def start_db() -> None:
         },
     )  # type: ignore
     await Tortoise.generate_schemas()
-    print("connected to database")
